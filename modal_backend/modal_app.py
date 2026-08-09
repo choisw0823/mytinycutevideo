@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import modal
-from modal_backend.job_utils import resolve_source_paths
+from modal_backend.job_utils import build_allowed_origins, resolve_source_paths
 
 THIS_DIR, GSULEE_WEBAPP = resolve_source_paths(Path(__file__), modal.is_local())
 DATA_ROOT = Path("/data/jobs")
@@ -154,10 +154,7 @@ def web_api():
     )
 
     web = FastAPI(title="My Tiny Cute Video API", version="1.0.0")
-    allowed_origins = ["http://localhost:8080", "http://127.0.0.1:8080"]
-    lovable_origin = os.getenv("LOVABLE_ORIGIN", "").strip().rstrip("/")
-    if lovable_origin:
-        allowed_origins.append(lovable_origin)
+    allowed_origins = build_allowed_origins(os.getenv("LOVABLE_ORIGIN", ""))
     web.add_middleware(
         CORSMiddleware,
         allow_origins=allowed_origins,

@@ -53,7 +53,7 @@ python3 -m venv .venv
 .venv/bin/modal deploy modal_backend/modal_app.py
 ```
 
-Modal Secret `samsung`에는 `OPENAI_API_KEY`가 있어야 합니다. Lovable 최종 도메인이 정해지면 같은 Secret에 `LOVABLE_ORIGIN=https://...`도 추가합니다. 자세한 API와 운영법은 [modal_backend/README.md](modal_backend/README.md)를 참고하세요.
+Modal Secret `samsung`에는 `OPENAI_API_KEY`가 있어야 합니다. 기본 주소 `https://mytinycutevideo.lovable.app`은 이미 허용되어 있습니다. Lovable 주소를 바꾸거나 커스텀 도메인을 쓰면 같은 Secret에 `LOVABLE_ORIGIN=https://...`도 추가합니다. 자세한 API와 운영법은 [modal_backend/README.md](modal_backend/README.md)를 참고하세요.
 
 Modal 배포 후 출력되는 `web_api` 주소를 Lovable 환경 변수에 넣습니다.
 
@@ -87,7 +87,7 @@ E2E 테스트는 Modal API를 가로채므로 OpenAI 비용이나 실제 영상 
 
 1. Modal 앱을 배포하고 `/health`가 `{"ok": true}`를 반환하는지 확인합니다.
 2. Lovable에 `VITE_MODAL_API_URL`을 등록하고 다시 배포합니다.
-3. `samsung` Secret의 `LOVABLE_ORIGIN`이 실제 Lovable 주소와 일치하는지 확인합니다.
+3. 기본 주소가 아닌 경우 `samsung` Secret의 `LOVABLE_ORIGIN`이 실제 Lovable 주소와 일치하는지 확인합니다.
 4. 발표 전 짧은 MP4로 실제 작업 한 번을 끝까지 실행합니다.
 5. 브라우저 자동 잠금과 절전 모드를 끕니다.
 6. 실패에 대비해 완성 MP4 하나를 로컬에 준비합니다.

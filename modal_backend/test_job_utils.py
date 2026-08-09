@@ -4,6 +4,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
+import modal_backend.job_utils as job_utils
 from modal_backend.job_utils import (
     UploadValidationError,
     append_event,
@@ -138,6 +139,16 @@ class DeploymentInputTests(unittest.TestCase):
 
         self.assertEqual(backend, Path("/root/modal_backend"))
         self.assertEqual(gsulee, Path("/root/gsulee"))
+
+
+class CorsOriginTests(unittest.TestCase):
+    def test_only_the_published_lovable_project_is_allowed_by_default(self):
+        build_origins = getattr(job_utils, "build_allowed_origins", lambda _: [])
+
+        origins = build_origins("")
+
+        self.assertIn("https://mytinycutevideo.lovable.app", origins)
+        self.assertNotIn("https://another-project.lovable.app", origins)
 
 
 if __name__ == "__main__":

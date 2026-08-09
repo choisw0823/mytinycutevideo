@@ -9,12 +9,26 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Mapping, Sequence
 
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".avi", ".mkv"}
+DEFAULT_ALLOWED_ORIGINS = (
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "https://mytinycutevideo.lovable.app",
+)
 MAX_FILES = 30
 MAX_TOTAL_BYTES = 4 * 1024 * 1024 * 1024
 
 
 class UploadValidationError(ValueError):
     """Raised when an uploaded file set is unsafe or unsupported."""
+
+
+def build_allowed_origins(configured_origin: str) -> list[str]:
+    """Return exact browser origins allowed to call the presentation API."""
+    origins = list(DEFAULT_ALLOWED_ORIGINS)
+    normalized = configured_origin.strip().rstrip("/")
+    if normalized and normalized not in origins:
+        origins.append(normalized)
+    return origins
 
 
 def resolve_source_paths(module_file: Path, is_local: bool) -> tuple[Path, Path]:

@@ -9,10 +9,10 @@ python3 -m pip install modal
 modal setup
 ```
 
-Modal Secret `samsung`에는 이미 `OPENAI_API_KEY`가 있어야 합니다. Lovable 최종 주소가 정해지면 같은 Secret에 다음 값을 추가하세요.
+Modal Secret `samsung`에는 이미 `OPENAI_API_KEY`가 있어야 합니다. 기본 배포 주소인 `https://mytinycutevideo.lovable.app`은 코드에서 허용합니다. 주소를 바꾸거나 커스텀 도메인을 연결하면 같은 Secret에 다음 값을 추가하세요.
 
 ```text
-LOVABLE_ORIGIN=https://<your-lovable-domain>
+LOVABLE_ORIGIN=https://<your-new-domain>
 ```
 
 ## 로컬 개발과 배포
