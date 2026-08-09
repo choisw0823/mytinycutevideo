@@ -118,5 +118,20 @@ class EventStateTests(unittest.TestCase):
         self.assertEqual(failed["error"], "render failed")
 
 
+class DeploymentInputTests(unittest.TestCase):
+    def test_sibling_gsulee_pipeline_assets_exist(self):
+        workspace = Path(__file__).resolve().parents[2]
+        webapp = workspace / "G-SULEE" / "webapp"
+
+        self.assertTrue(
+            (webapp / "pipeline.py").is_file(),
+            f"G-SULEE pipeline.py가 필요합니다: {webapp / 'pipeline.py'}",
+        )
+        self.assertTrue(
+            (webapp / "static" / "NanumGothic-Bold.ttf").is_file(),
+            f"자막 폰트가 필요합니다: {webapp / 'static' / 'NanumGothic-Bold.ttf'}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
