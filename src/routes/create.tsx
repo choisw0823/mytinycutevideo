@@ -22,6 +22,7 @@ export const Route = createFileRoute("/create")({
 });
 
 function CreatePage() {
+  const [hydrated, setHydrated] = useState(false);
   const [screen, setScreen] = useState<ScreenState>("input");
   const [files, setFiles] = useState<File[]>([]);
   const [prompt, setPrompt] = useState("");
@@ -34,6 +35,7 @@ function CreatePage() {
   const sinceRef = useRef(0);
 
   useEffect(() => {
+    setHydrated(true);
     const savedJobId = window.localStorage.getItem(STORAGE_KEY);
     if (savedJobId) {
       setJobId(savedJobId);
@@ -126,7 +128,10 @@ function CreatePage() {
   const working = screen === "uploading" || screen === "processing";
 
   return (
-    <main className={`memory-page create-page create-page--${screen}`}>
+    <main
+      className={`memory-page create-page create-page--${screen}`}
+      data-hydrated={hydrated ? "true" : "false"}
+    >
       <MemoryCollage variant={screen === "completed" ? "result" : "quiet"} />
       <header className="create-header">
         <Link to="/" className="back-link" aria-label="메인으로 돌아가기">

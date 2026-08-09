@@ -31,6 +31,7 @@ test("creates a video job and shows the finished result", async ({ page }) => {
   });
 
   await page.goto("/create");
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
   await page.getByLabel("영상 파일").setInputFiles({
     name: "summer.mp4",
     mimeType: "video/mp4",
@@ -62,6 +63,7 @@ test("rejects unsupported files and keeps an empty prompt disabled", async ({
   page,
 }) => {
   await page.goto("/create");
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
 
   await page.getByLabel("영상 파일").setInputFiles({
     name: "notes.txt",
@@ -103,6 +105,7 @@ test("shows a restart action when video generation fails", async ({ page }) => {
   });
 
   await page.goto("/create");
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
   await page.getByLabel("영상 파일").setInputFiles({
     name: "memory.mp4",
     mimeType: "video/mp4",

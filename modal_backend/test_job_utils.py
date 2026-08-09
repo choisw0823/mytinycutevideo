@@ -9,6 +9,7 @@ from modal_backend.job_utils import (
     append_event,
     build_input_zip,
     safe_zip_members,
+    resolve_source_paths,
     validate_uploads,
 )
 
@@ -131,6 +132,12 @@ class DeploymentInputTests(unittest.TestCase):
             (webapp / "static" / "NanumGothic-Bold.ttf").is_file(),
             f"자막 폰트가 필요합니다: {webapp / 'static' / 'NanumGothic-Bold.ttf'}",
         )
+
+    def test_modal_runtime_uses_mounted_source_paths(self):
+        backend, gsulee = resolve_source_paths(Path("/root/modal_app.py"), is_local=False)
+
+        self.assertEqual(backend, Path("/root/modal_backend"))
+        self.assertEqual(gsulee, Path("/root/gsulee"))
 
 
 if __name__ == "__main__":

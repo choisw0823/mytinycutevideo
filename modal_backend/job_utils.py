@@ -17,6 +17,15 @@ class UploadValidationError(ValueError):
     """Raised when an uploaded file set is unsafe or unsupported."""
 
 
+def resolve_source_paths(module_file: Path, is_local: bool) -> tuple[Path, Path]:
+    """Resolve source inputs locally and their fixed mounts inside Modal."""
+    if not is_local:
+        return Path("/root/modal_backend"), Path("/root/gsulee")
+    backend_dir = module_file.resolve().parent
+    workspace_dir = backend_dir.parents[1]
+    return backend_dir, workspace_dir / "G-SULEE" / "webapp"
+
+
 def validate_uploads(paths: Sequence[Path]) -> str:
     """Validate uploaded paths and return either ``zip`` or ``videos``."""
     if not paths:

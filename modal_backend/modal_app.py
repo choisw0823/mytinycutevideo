@@ -1,7 +1,5 @@
 """Modal deployment for the My Tiny Cute Video asynchronous rendering API."""
 
-from __future__ import annotations
-
 import os
 import re
 import shutil
@@ -15,15 +13,14 @@ from pathlib import Path
 from typing import Any
 
 import modal
+from modal_backend.job_utils import resolve_source_paths
 
-THIS_DIR = Path(__file__).resolve().parent
-WORKSPACE_DIR = THIS_DIR.parents[1]
-GSULEE_WEBAPP = WORKSPACE_DIR / "G-SULEE" / "webapp"
+THIS_DIR, GSULEE_WEBAPP = resolve_source_paths(Path(__file__), modal.is_local())
 DATA_ROOT = Path("/data/jobs")
 CHUNK_SIZE = 8 * 1024 * 1024
 JOB_ID_PATTERN = re.compile(r"^[a-f0-9]{24}$")
 
-if not (GSULEE_WEBAPP / "pipeline.py").is_file():
+if modal.is_local() and not (GSULEE_WEBAPP / "pipeline.py").is_file():
     raise RuntimeError(f"G-SULEE pipeline.py를 찾을 수 없습니다: {GSULEE_WEBAPP}")
 
 api_image = (
@@ -35,7 +32,8 @@ api_image = (
 render_image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("ffmpeg", "git", "libsndfile1")
-    .pip_install("openai", "torch", "soundfile", "numpy")
+    .pip_install("openai", "soundfile", "numpy")
+    .pip_install("torch", index_url="https://download.pytorch.org/whl/cpu")
     .add_local_dir(str(GSULEE_WEBAPP), "/root/gsulee")
     .add_local_dir(str(THIS_DIR), "/root/modal_backend")
 )
@@ -172,10 +170,9 @@ def web_api():
     async def health():
         return {"ok": True, "service": "my-tiny-cute-video"}
 
-    @web.post("/jobs", status_code=202)
     async def create_job(
-        files: list[UploadFile] = File(...),
-        prompt: str = Form(...),
+        files=File(...),
+        prompt=Form(...),
     ):
         clean_prompt = prompt.strip()
         if not clean_prompt:
@@ -249,6 +246,12 @@ def web_api():
         finally:
             for upload in files:
                 await upload.close()
+
+    create_job.__annotations__ = {
+        "files": list[UploadFile],
+        "prompt": str,
+    }
+    web.add_api_route("/jobs", create_job, methods=["POST"], status_code=202)
 
     @web.get("/jobs/{job_id}")
     async def get_job(job_id: str, since: int = Query(default=0, ge=0)):
