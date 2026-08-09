@@ -43,3 +43,17 @@ test("creates a video job and shows the finished result", async ({ page }) => {
 
   await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
 });
+
+test("landing is public and opens the video creator", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("heading", { name: "My Tiny Cute Video" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "시작하기" })).toHaveAttribute(
+    "href",
+    "/create",
+  );
+  await expect(page.getByText("로그인")).toHaveCount(0);
+  await expect(page.getByText("회원가입")).toHaveCount(0);
+});

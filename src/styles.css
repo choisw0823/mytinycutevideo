@@ -51,8 +51,10 @@
 
 :root {
   --radius: 0.625rem;
-  --font-sans: "Albert Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-sans: "Pretendard", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "DM Serif Display", "Gowun Batang", serif;
+  --font-memory: "Gowun Batang", serif;
+  --font-mono: ui-monospace, monospace;
   --background: oklch(0.985 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -135,5 +137,205 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .memory-page {
+    position: relative;
+    min-height: 100svh;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+      radial-gradient(circle at 50% 42%, rgb(255 253 246 / 0.98) 0 18rem, transparent 38rem),
+      linear-gradient(135deg, rgb(250 244 229), rgb(248 239 226) 48%, rgb(242 229 214));
+    color: #2d2925;
+  }
+
+  .memory-page::after {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    content: "";
+    opacity: 0.32;
+    background-image:
+      repeating-radial-gradient(circle at 20% 20%, rgb(80 55 40 / 0.05) 0 0.7px, transparent 0.8px 4px),
+      linear-gradient(rgb(255 255 255 / 0.12), transparent);
+    mix-blend-mode: multiply;
+  }
+
+  .memory-page--landing {
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+  }
+
+  .memory-collage {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .memory-photo {
+    position: absolute;
+    top: var(--photo-y);
+    left: var(--photo-x);
+    width: clamp(7.5rem, var(--photo-size), 19vw);
+    margin: 0;
+    padding: 0.48rem 0.48rem 1.75rem;
+    transform: rotate(var(--photo-rotate));
+    border: 1px solid rgb(77 55 39 / 0.08);
+    border-radius: 0.18rem;
+    background: #fffdf8;
+    box-shadow: 0 16px 45px rgb(88 57 36 / 0.18), 0 2px 8px rgb(88 57 36 / 0.08);
+    animation: memory-drift 7s ease-in-out var(--photo-delay) infinite alternate;
+  }
+
+  .memory-photo img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 0.08rem;
+    filter: sepia(0.12) saturate(0.84) contrast(0.96);
+  }
+
+  .memory-photo figcaption {
+    position: absolute;
+    right: 0.55rem;
+    bottom: 0.42rem;
+    left: 0.55rem;
+    overflow: hidden;
+    color: #6e6258;
+    font-family: var(--font-memory);
+    font-size: 0.68rem;
+    line-height: 1.1rem;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .memory-collage--quiet {
+    opacity: 0.32;
+    filter: saturate(0.55);
+  }
+
+  .memory-collage--result .memory-photo {
+    opacity: 0.68;
+  }
+
+  .hero-card {
+    width: min(91vw, 37rem);
+    padding: clamp(2.5rem, 7vw, 4.75rem) clamp(1.75rem, 7vw, 4.5rem) 2.4rem;
+    border: 1px solid rgb(109 77 54 / 0.14);
+    border-radius: 0.4rem;
+    background: rgb(255 253 247 / 0.88);
+    box-shadow: 0 28px 80px rgb(92 60 38 / 0.16);
+    text-align: center;
+    backdrop-filter: blur(15px);
+  }
+
+  .brand-mark {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: 0 auto 1.15rem;
+    place-items: center;
+    border: 1px solid rgb(86 64 49 / 0.28);
+    border-radius: 50%;
+    color: #714f40;
+  }
+
+  .eyebrow {
+    margin: 0 0 0.9rem;
+    color: #967767;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+  }
+
+  .hero-card h1 {
+    margin: 0;
+    color: #302822;
+    font-family: var(--font-serif);
+    font-size: clamp(2.8rem, 8vw, 5.75rem);
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: -0.035em;
+  }
+
+  .hero-copy {
+    margin: 1.75rem 0 1.9rem;
+    color: #52463d;
+    font-family: var(--font-memory);
+    font-size: clamp(1.15rem, 3vw, 1.55rem);
+    line-height: 1.65;
+  }
+
+  .primary-action {
+    display: inline-flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    padding: 0.9rem 1.7rem;
+    border-radius: 999px;
+    background: #5d3f35;
+    box-shadow: 0 8px 20px rgb(93 63 53 / 0.22);
+    color: #fffaf3;
+    font-size: 0.94rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+  }
+
+  .primary-action:hover {
+    transform: translateY(-2px);
+    background: #483029;
+    box-shadow: 0 11px 25px rgb(93 63 53 / 0.28);
+  }
+
+  .primary-action:focus-visible {
+    outline: 3px solid rgb(168 111 90 / 0.45);
+    outline-offset: 4px;
+  }
+
+  .hero-note {
+    margin: 1.25rem 0 0;
+    color: #8b7d72;
+    font-size: 0.76rem;
+  }
+}
+
+@keyframes memory-drift {
+  from { translate: 0 0; }
+  to { translate: 0 -8px; }
+}
+
+@media (max-width: 760px) {
+  .memory-photo:nth-child(n + 9) {
+    display: none;
+  }
+
+  .memory-photo {
+    opacity: 0.64;
+  }
+
+  .hero-card {
+    background: rgb(255 253 247 / 0.93);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
