@@ -11,6 +11,7 @@ import { DotGrid } from "./DotGrid";
 import { FloatingDock } from "./FloatingDock";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { AiPromptOverlay } from "./AiPromptOverlay";
+import { ZoomControls } from "./ZoomControls";
 
 import { useUndoStack, type UndoAction } from "@/hooks/use-undo-stack";
 
@@ -128,6 +129,46 @@ export function CanvasWorkspace({ board, items, onTitleChange }: Props) {
       y: pointer.y - mousePointTo.y * newScale,
     });
   }, []);
+
+  // Zoom helpers — keep the viewport center fixed while scaling
+  const zoomTo = useCallback((nextScale: number) => {
+    const clamped = Math.min(Math.max(nextScale, 0.1), 5);
+    setStageScale((oldScale) => {
+      const cx = stageSize.width / 2;
+      const cy = stageSize.height / 2;
+      setStagePos((pos) => ({
+        x: cx - ((cx - pos.x) / oldScale) * clamped,
+        y: cy - ((cy - pos.y) / oldScale) * clamped,
+      }));
+      return clamped;
+    });
+  }, [stageSize.width, stageSize.height]);
+
+  const handleResetZoom = useCallback(() => {
+    zoomTo(1);
+  }, [zoomTo]);
+
+  const handleFitToContent = useCallback(() => {
+    if (items.length === 0) return;
+    const minX = Math.min(...items.map((i) => i.x));
+    const minY = Math.min(...items.map((i) => i.y));
+    const maxX = Math.max(...items.map((i) => i.x + i.width));
+    const maxY = Math.max(...items.map((i) => i.y + i.height));
+    const pad = 80;
+    const contentW = Math.max(maxX - minX, 1);
+    const contentH = Math.max(maxY - minY, 1);
+    const scale = Math.min(
+      (stageSize.width - pad * 2) / contentW,
+      (stageSize.height - pad * 2) / contentH,
+      2
+    );
+    const clamped = Math.min(Math.max(scale, 0.1), 5);
+    setStageScale(clamped);
+    setStagePos({
+      x: stageSize.width / 2 - (minX + contentW / 2) * clamped,
+      y: stageSize.height / 2 - (minY + contentH / 2) * clamped,
+    });
+  }, [items, stageSize.width, stageSize.height]);
 
   // Save item position/size
   const updateItem = useMutation({
@@ -548,6 +589,16 @@ export function CanvasWorkspace({ board, items, onTitleChange }: Props) {
         onBringToFront={handleContextBringToFront}
         onSendToBack={handleContextSendToBack}
         onDelete={handleContextDelete}
+      />
+
+      {/* Zoom Controls */}
+      <ZoomControls
+        scale={stageScale}
+        onZoomIn={() => zoomTo(stageScale * 1.2)}
+        onZoomOut={() => zoomTo(stageScale / 1.2)}
+        onReset={handleResetZoom}
+        onFit={handleFitToContent}
+        canFit={items.length > 0}
       />
 
       {/* Floating Dock */}
