@@ -288,6 +288,7 @@ def web_api():
             result_path,
             media_type="video/mp4",
             filename="my-tiny-cute-video.mp4",
+            content_disposition_type="inline",
             headers={"Cache-Control": "no-store"},
         )
 
