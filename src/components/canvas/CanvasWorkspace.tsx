@@ -591,6 +591,16 @@ export function CanvasWorkspace({ board, items, onTitleChange }: Props) {
         onDelete={handleContextDelete}
       />
 
+      {/* Zoom Controls */}
+      <ZoomControls
+        scale={stageScale}
+        onZoomIn={() => zoomTo(stageScale * 1.2)}
+        onZoomOut={() => zoomTo(stageScale / 1.2)}
+        onReset={handleResetZoom}
+        onFit={handleFitToContent}
+        canFit={items.length > 0}
+      />
+
       {/* Floating Dock */}
       <FloatingDock
         tool={tool}
