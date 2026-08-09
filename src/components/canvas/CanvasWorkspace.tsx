@@ -11,6 +11,7 @@ import { DotGrid } from "./DotGrid";
 import { FloatingDock } from "./FloatingDock";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { AiPromptOverlay } from "./AiPromptOverlay";
+import { ZoomControls } from "./ZoomControls";
 
 import { useUndoStack, type UndoAction } from "@/hooks/use-undo-stack";
 
