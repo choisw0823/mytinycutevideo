@@ -9,6 +9,7 @@ from modal_backend.job_utils import (
     UploadValidationError,
     append_event,
     build_input_zip,
+    publish_pipeline_event,
     safe_zip_members,
     resolve_source_paths,
     validate_uploads,
@@ -110,6 +111,33 @@ class SafeZipTests(unittest.TestCase):
 
 
 class EventStateTests(unittest.TestCase):
+    def test_done_event_commits_files_before_publishing_completed_state(self):
+        calls = []
+        initial = {"state": "running", "stage": "render", "events": [], "next": 0}
+
+        updated = publish_pipeline_event(
+            initial,
+            {"stage": "done", "video": "result.mp4"},
+            commit_files=lambda: calls.append("commit"),
+            publish_state=lambda state: calls.append(f"state:{state['state']}"),
+        )
+
+        self.assertEqual(calls, ["commit", "state:completed"])
+        self.assertEqual(updated["state"], "completed")
+
+    def test_progress_event_does_not_commit_result_files(self):
+        calls = []
+        initial = {"state": "running", "stage": "render", "events": [], "next": 0}
+
+        publish_pipeline_event(
+            initial,
+            {"stage": "render", "progress": 1, "total": 2},
+            commit_files=lambda: calls.append("commit"),
+            publish_state=lambda state: calls.append(f"state:{state['state']}"),
+        )
+
+        self.assertEqual(calls, ["state:running"])
+
     def test_append_event_updates_progress_without_mutating_input(self):
         initial = {"state": "queued", "stage": "queued", "events": [], "next": 0}
 

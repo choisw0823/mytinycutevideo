@@ -6,7 +6,7 @@ import stat
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".avi", ".mkv"}
 DEFAULT_ALLOWED_ORIGINS = (
@@ -156,4 +156,19 @@ def append_event(
         updated["state"] = "running"
         updated["done"] = False
         updated.setdefault("error", None)
+    return updated
+
+
+def publish_pipeline_event(
+    state: Mapping[str, Any],
+    event: Mapping[str, Any],
+    *,
+    commit_files: Callable[[], None],
+    publish_state: Callable[[dict[str, Any]], None],
+) -> dict[str, Any]:
+    """Publish completion only after its result files are visible."""
+    if event.get("stage") == "done":
+        commit_files()
+    updated = append_event(state, event)
+    publish_state(updated)
     return updated

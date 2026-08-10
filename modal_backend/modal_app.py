@@ -102,7 +102,7 @@ def render_job(job_id: str, zip_relative_path: str, prompt: str) -> None:
     """Run the existing G-SULEE renderer and persist its progress events."""
     sys.path.insert(0, "/root/gsulee")
     sys.path.insert(0, "/root")
-    from modal_backend.job_utils import append_event, reload_volume_file
+    from modal_backend.job_utils import publish_pipeline_event, reload_volume_file
     import pipeline
 
     job_dir = _resolved_job_path(job_id)
@@ -115,8 +115,12 @@ def render_job(job_id: str, zip_relative_path: str, prompt: str) -> None:
             state = _state_for(job_id)
             if state is None:
                 return
-            updated = append_event(state, event)
-            _write_state(job_id, updated)
+            publish_pipeline_event(
+                state,
+                event,
+                commit_files=jobs_volume.commit,
+                publish_state=lambda updated: _write_state(job_id, updated),
+            )
 
             now = time.monotonic()
             if event.get("thumb") and now - last_thumbnail_commit[0] >= 2.5:
