@@ -2,7 +2,7 @@ import { FileArchive, Film, Plus, Trash2, UploadCloud } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 const VIDEO_EXTENSIONS = [".mp4", ".mov", ".m4v", ".avi", ".mkv"];
-const MAX_FILE_COUNT = 30;
+const MAX_FILE_COUNT = 60;
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024 * 1024;
 
 function extensionOf(name: string) {

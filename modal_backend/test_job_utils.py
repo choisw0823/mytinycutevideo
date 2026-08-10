@@ -40,6 +40,21 @@ class UploadValidationTests(unittest.TestCase):
 
         self.assertEqual(validate_uploads(uploads), "videos")
 
+    def test_accepts_sixty_videos(self):
+        uploads = [self.make_file(f"clip-{index:02d}.mp4") for index in range(60)]
+
+        try:
+            mode = validate_uploads(uploads)
+        except UploadValidationError as error:
+            self.fail(f"60개 영상이 거절됐습니다: {error}")
+        self.assertEqual(mode, "videos")
+
+    def test_rejects_sixty_one_videos(self):
+        uploads = [self.make_file(f"clip-{index:02d}.mp4") for index in range(61)]
+
+        with self.assertRaisesRegex(UploadValidationError, "최대 60개"):
+            validate_uploads(uploads)
+
     def test_rejects_mixed_zip_and_video(self):
         uploads = [self.make_file("clips.zip"), self.make_file("one.mp4")]
 

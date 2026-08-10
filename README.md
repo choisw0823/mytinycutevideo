@@ -67,7 +67,7 @@ VITE_MODAL_API_URL=https://<workspace>--my-tiny-cute-video-web-api.modal.run
 
 - ZIP 한 개 또는 영상 여러 개
 - `.mp4`, `.mov`, `.m4v`, `.avi`, `.mkv`
-- 최대 30개, 코드상 최대 4GB
+- 최대 60개, 코드상 최대 4GB
 - 발표 권장: H.264 MP4 2~3개, 총 500MB 이하
 
 일반 노트북에서도 업로드와 화면 표시는 문제없습니다. 실제 분석·렌더링은 Modal에서 실행되므로 노트북 GPU는 필요하지 않습니다.

@@ -62,12 +62,10 @@ function CreatePage() {
         sinceRef.current = status.next;
 
         if (status.state === "completed") {
-          window.localStorage.removeItem(STORAGE_KEY);
           setScreen("completed");
           return;
         }
         if (status.state === "failed") {
-          window.localStorage.removeItem(STORAGE_KEY);
           setError(status.error || "영상 처리 중 문제가 생겼습니다.");
           setScreen("failed");
           return;

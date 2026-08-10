@@ -274,7 +274,7 @@ def web_api():
         return FileResponse(target, media_type=media_type, headers={"Cache-Control": "no-store"})
 
     @web.get("/jobs/{job_id}/result")
-    async def get_result(job_id: str):
+    async def get_result(job_id: str, download: bool = Query(default=False)):
         state = _state_for(job_id)
         if state is None:
             raise HTTPException(status_code=404, detail="작업을 찾을 수 없습니다.")
@@ -288,7 +288,7 @@ def web_api():
             result_path,
             media_type="video/mp4",
             filename="my-tiny-cute-video.mp4",
-            content_disposition_type="inline",
+            content_disposition_type="attachment" if download else "inline",
             headers={"Cache-Control": "no-store"},
         )
 

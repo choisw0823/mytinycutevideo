@@ -1,5 +1,5 @@
 import { Download, RotateCcw, Sparkles } from "lucide-react";
-import { getJobResultUrl } from "@/lib/modal-api";
+import { getJobDownloadUrl, getJobResultUrl } from "@/lib/modal-api";
 import type { VideoJobEvent } from "@/types/video-job";
 
 function formatDuration(seconds?: number) {
@@ -44,7 +44,7 @@ export function ResultPlayer({
       )}
 
       <div className="result-actions">
-        <a className="primary-action" href={getJobResultUrl(jobId)} download="my-tiny-cute-video.mp4">
+        <a className="primary-action" href={getJobDownloadUrl(jobId)} download="my-tiny-cute-video.mp4">
           <Download size={18} /> MP4 다운로드
         </a>
         <button type="button" className="secondary-action" onClick={onRestart}>

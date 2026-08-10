@@ -34,7 +34,7 @@ modal deploy modal_backend/modal_app.py
 - `GET /jobs/{job_id}/result`: 완료된 MP4 재생/다운로드
 - `GET /health`: 배포 상태 확인
 
-지원 형식은 ZIP 한 개 또는 MP4, MOV, M4V, AVI, MKV 최대 30개입니다. 코드상 상한은 4GB지만 발표에서는 총 500MB 이하의 짧은 H.264 영상 2~3개를 권장합니다. 업로드 HTTP 요청은 Modal 제한상 150초 안에 끝나야 합니다.
+지원 형식은 ZIP 한 개 또는 MP4, MOV, M4V, AVI, MKV 최대 60개입니다. 코드상 상한은 4GB지만 발표에서는 총 500MB 이하의 짧은 H.264 영상 2~3개를 권장합니다. 업로드 HTTP 요청은 Modal 제한상 150초 안에 끝나야 합니다.
 
 렌더 함수는 최대 컨테이너 1개, CPU 4코어, 메모리 8GB, 제한시간 1시간으로 설정되어 있습니다. 작업 파일은 다음 작업 생성 시 24시간이 지난 항목부터 정리됩니다.
 

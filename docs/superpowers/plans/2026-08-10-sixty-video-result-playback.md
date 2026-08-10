@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Allow up to 60 source videos and preserve completed jobs so their MP4 result remains visible after refresh.
+**Goal:** Allow up to 60 source videos, play completed MP4s inline, download them explicitly, and preserve completed jobs after refresh.
 
 **Architecture:** Keep the existing client/server count guards synchronized at 60 while retaining the 4GB size cap. Persist the job ID until explicit restart so the existing polling flow reconstructs completed state and the result player after hydration.
 
@@ -13,6 +13,7 @@
 - Direct video uploads and ZIP members allow exactly 60 and reject 61.
 - The 4GB compressed/uploaded size limits remain unchanged.
 - Existing completed result files are reused; no re-render is required.
+- `/result` is inline playback and `/result?download=1` is attachment download.
 - Work directly on `main` as explicitly requested by the user.
 
 ---
@@ -64,7 +65,25 @@
 - [ ] Stop deleting the stored job ID on completed/failed poll responses; keep deletion in `restart` only.
 - [ ] Run the focused test again.
 
-### Task 4: Verification and deployment
+### Task 4: Separate playback and download responses
+
+**Files:**
+- Modify: `e2e/video-demo.spec.ts`
+- Modify: `src/lib/modal-api.ts`
+- Modify: `src/components/video/ResultPlayer.tsx`
+- Modify: `modal_backend/modal_app.py`
+
+**Interfaces:**
+- Consumes: `GET /jobs/{job_id}/result` and `GET /jobs/{job_id}/result?download=1`
+- Produces: inline playback URL and attachment download URL
+
+- [ ] Add E2E assertions that the video source ends in `/result` and the download link ends in `/result?download=1`.
+- [ ] Verify the current shared URL fails the download assertion.
+- [ ] Add `getJobDownloadUrl(jobId)` and use it for the download link.
+- [ ] Make the backend result route choose `inline` by default and `attachment` when `download=1`.
+- [ ] Run focused E2E and Python compilation.
+
+### Task 5: Verification and deployment
 
 **Files:**
 - Modify: none beyond verified implementation files
@@ -75,6 +94,5 @@
 
 - [ ] Run Python tests, TypeScript, lint, build, and all Playwright tests.
 - [ ] Deploy `modal_backend/modal_app.py`.
-- [ ] Verify the result endpoint returns `206`, `video/mp4`, CORS, and `Content-Disposition: inline`.
+- [ ] Verify playback returns `206`, `video/mp4`, CORS, and `inline`; verify download returns `attachment`.
 - [ ] Commit the implementation on `main` and confirm worktree status.
-

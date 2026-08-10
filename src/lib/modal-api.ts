@@ -78,3 +78,6 @@ export const getJobAssetUrl = (jobId: string, path: string) =>
 
 export const getJobResultUrl = (jobId: string) =>
   `${baseUrl()}/jobs/${jobId}/result`;
+
+export const getJobDownloadUrl = (jobId: string) =>
+  `${getJobResultUrl(jobId)}?download=1`;

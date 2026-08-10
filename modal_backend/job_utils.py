@@ -14,7 +14,7 @@ DEFAULT_ALLOWED_ORIGINS = (
     "http://127.0.0.1:8080",
     "https://mytinycutevideo.lovable.app",
 )
-MAX_FILES = 30
+MAX_FILES = 60
 MAX_TOTAL_BYTES = 4 * 1024 * 1024 * 1024
 
 

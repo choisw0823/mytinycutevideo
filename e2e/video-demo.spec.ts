@@ -43,6 +43,18 @@ test("creates a video job and shows the finished result", async ({ page }) => {
   await page.getByRole("button", { name: "영상 만들기" }).click();
 
   await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
+  await expect(page.locator(".result-frame video")).toHaveAttribute(
+    "src",
+    /\/jobs\/job-demo\/result$/,
+  );
+  await expect(page.getByRole("link", { name: "MP4 다운로드" })).toHaveAttribute(
+    "href",
+    /\/jobs\/job-demo\/result\?download=1$/,
+  );
+
+  await page.reload();
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
+  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
 });
 
 test("landing is public and opens the video creator", async ({ page }) => {
@@ -78,6 +90,28 @@ test("rejects unsupported files and keeps an empty prompt disabled", async ({
     buffer: Buffer.from("demo-video"),
   });
   await expect(page.getByRole("button", { name: "영상 만들기" })).toBeDisabled();
+});
+
+test("accepts sixty videos and rejects sixty one", async ({ page }) => {
+  const videoFiles = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      name: `memory-${index.toString().padStart(2, "0")}.mp4`,
+      mimeType: "video/mp4",
+      buffer: Buffer.from("demo-video"),
+    }));
+
+  await page.goto("/create");
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
+
+  await page.getByLabel("영상 파일").setInputFiles(videoFiles(60));
+  await expect(page.getByText("60개의 순간")).toBeVisible();
+  await page
+    .getByLabel("영상에 담고 싶은 이야기")
+    .fill("여러 순간을 하나의 따뜻한 기억으로 만들어줘");
+  await expect(page.getByRole("button", { name: "영상 만들기" })).toBeEnabled();
+
+  await page.getByLabel("영상 파일").setInputFiles(videoFiles(61));
+  await expect(page.getByText("영상은 최대 60개까지 선택할 수 있어요")).toBeVisible();
 });
 
 test("shows a restart action when video generation fails", async ({ page }) => {

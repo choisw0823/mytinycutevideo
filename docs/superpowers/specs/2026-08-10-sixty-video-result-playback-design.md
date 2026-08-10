@@ -6,7 +6,8 @@
 - 61개 이상은 프런트와 Modal API에서 동일하게 거절한다.
 - 총 업로드 및 압축 해제 크기 4GB 제한은 유지한다.
 - 완료된 작업 ID를 브라우저에 보존해 새로고침 후에도 결과 영상 화면을 복원한다.
-- 결과 MP4는 기존의 `inline`, `video/mp4`, HTTP Range 응답을 계속 사용한다.
+- 완료 직후 결과 MP4는 페이지 안의 `<video>`에서 바로 재생한다.
+- 다운로드 버튼은 재생 URL과 분리된 attachment 응답으로 파일 저장을 시작한다.
 
 ## 설계
 
@@ -14,10 +15,12 @@
 
 작업 ID는 사용자가 `새 영상 만들기`를 누를 때만 삭제한다. 완료 또는 실패 시 자동 삭제하지 않아 새로고침 후 상태 API를 다시 조회하고 완료 화면과 `<video>` URL을 재구성할 수 있게 한다. 실패 작업도 같은 화면을 복구해 오류 원인을 잃지 않도록 한다.
 
+결과 API의 기본 `/result` 응답은 `inline`으로 유지하고, 다운로드 버튼은 `/result?download=1`을 호출해 `attachment`로 받는다. 두 응답 모두 `video/mp4`와 HTTP Range를 지원한다.
+
 ## 검증
 
 - Python 단위 테스트: 영상 60개 허용, 61개 거절.
 - Playwright: 60개 선택 가능, 61개 선택 거절.
 - Playwright: 완료 후 새로고침해도 결과 화면과 영상 URL 유지.
+- Playwright: 재생 URL과 다운로드 URL이 서로 다름.
 - TypeScript, lint, 프로덕션 빌드 및 Modal 배포 후 CORS/Range/inline 헤더 확인.
-
