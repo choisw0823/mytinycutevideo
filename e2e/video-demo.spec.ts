@@ -15,6 +15,19 @@ test("creates a video job and shows the finished result", async ({ page }) => {
   });
 
   await page.route("**/jobs/job-demo**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/result")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "video/mp4",
+        headers: url.searchParams.has("download")
+          ? { "Content-Disposition": 'attachment; filename="my-tiny-cute-video.mp4"' }
+          : undefined,
+        body: Buffer.from("finished-video"),
+      });
+      return;
+    }
+
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -47,13 +60,73 @@ test("creates a video job and shows the finished result", async ({ page }) => {
     "src",
     /\/jobs\/job-demo\/result$/,
   );
-  await expect(page.getByRole("link", { name: "MP4 다운로드" })).toHaveAttribute(
-    "href",
-    /\/jobs\/job-demo\/result\?download=1$/,
-  );
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "MP4 다운로드" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("my-tiny-cute-video.mp4");
+  await expect(page).toHaveURL(/\/create$/);
+  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
 
   await page.reload();
   await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
+  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
+});
+
+test("keeps the result visible when download failure occurs", async ({ page }) => {
+  await page.route("**/jobs", async (route) => {
+    await route.fulfill({
+      status: 202,
+      contentType: "application/json",
+      body: JSON.stringify({ job_id: "job-download-failed" }),
+    });
+  });
+
+  await page.route("**/jobs/job-download-failed**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/result") && url.searchParams.has("download")) {
+      await route.fulfill({ status: 500, body: "download failed" });
+      return;
+    }
+    if (url.pathname.endsWith("/result")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "video/mp4",
+        body: Buffer.from("finished-video"),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        job_id: "job-download-failed",
+        state: "completed",
+        stage: "done",
+        events: [],
+        next: 0,
+        done: true,
+        error: null,
+      }),
+    });
+  });
+
+  await page.goto("/create");
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
+  await page.getByLabel("영상 파일").setInputFiles({
+    name: "summer.mp4",
+    mimeType: "video/mp4",
+    buffer: Buffer.from("demo-video"),
+  });
+  await page
+    .getByLabel("영상에 담고 싶은 이야기")
+    .fill("여름날 가족 여행의 따뜻한 순간을 모아줘");
+  await page.getByRole("button", { name: "영상 만들기" }).click();
+
+  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
+  await page.getByRole("button", { name: "MP4 다운로드" }).click();
+  await expect(page.getByText("영상 다운로드에 실패했습니다.")).toBeVisible();
+  await expect(page).toHaveURL(/\/create$/);
   await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
 });
 

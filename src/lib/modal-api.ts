@@ -81,3 +81,19 @@ export const getJobResultUrl = (jobId: string) =>
 
 export const getJobDownloadUrl = (jobId: string) =>
   `${getJobResultUrl(jobId)}?download=1`;
+
+export async function downloadJobResult(jobId: string): Promise<void> {
+  const response = await fetch(getJobDownloadUrl(jobId));
+  if (!response.ok) {
+    throw new Error("영상 다운로드에 실패했습니다.");
+  }
+
+  const objectUrl = URL.createObjectURL(await response.blob());
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = "my-tiny-cute-video.mp4";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+}

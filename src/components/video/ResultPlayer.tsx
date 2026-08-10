@@ -1,5 +1,6 @@
 import { Download, RotateCcw, Sparkles } from "lucide-react";
-import { getJobDownloadUrl, getJobResultUrl } from "@/lib/modal-api";
+import { useState } from "react";
+import { downloadJobResult, getJobResultUrl } from "@/lib/modal-api";
 import type { VideoJobEvent } from "@/types/video-job";
 
 function formatDuration(seconds?: number) {
@@ -22,6 +23,20 @@ export function ResultPlayer({
     .reverse()
     .find((event) => event.video || event.duration || event.size_mb);
   const duration = formatDuration(finalEvent?.duration);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      await downloadJobResult(jobId);
+    } catch {
+      setDownloadError("영상 다운로드에 실패했습니다.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <section className="result-card" aria-labelledby="result-title">
@@ -44,13 +59,23 @@ export function ResultPlayer({
       )}
 
       <div className="result-actions">
-        <a className="primary-action" href={getJobDownloadUrl(jobId)} download="my-tiny-cute-video.mp4">
-          <Download size={18} /> MP4 다운로드
-        </a>
+        <button
+          type="button"
+          className="primary-action"
+          onClick={() => void handleDownload()}
+          disabled={downloading}
+        >
+          <Download size={18} /> {downloading ? "다운로드 중..." : "MP4 다운로드"}
+        </button>
         <button type="button" className="secondary-action" onClick={onRestart}>
           <RotateCcw size={17} /> 새 영상 만들기
         </button>
       </div>
+      {downloadError && (
+        <p className="result-download-error" role="alert">
+          {downloadError}
+        </p>
+      )}
     </section>
   );
 }
