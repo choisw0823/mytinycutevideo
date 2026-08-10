@@ -133,6 +133,8 @@ test("keeps the result visible when download failure occurs", async ({ page }) =
 test("landing is public and opens the video creator", async ({ page }) => {
   await page.goto("/");
 
+  const favicon = page.locator('link[rel="icon"][type="image/png"]');
+  await expect(favicon).toHaveAttribute("href", /favicon.*\.png$/);
   await expect(
     page.getByRole("heading", { name: "My Tiny Cute Video" }),
   ).toBeVisible();
