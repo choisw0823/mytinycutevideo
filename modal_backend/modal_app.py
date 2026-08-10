@@ -16,12 +16,15 @@ import modal
 from modal_backend.job_utils import build_allowed_origins, resolve_source_paths
 
 THIS_DIR, GSULEE_WEBAPP = resolve_source_paths(Path(__file__), modal.is_local())
+BGM_ASSETS = THIS_DIR / "bgm"
 DATA_ROOT = Path("/data/jobs")
 CHUNK_SIZE = 8 * 1024 * 1024
 JOB_ID_PATTERN = re.compile(r"^[a-f0-9]{24}$")
 
 if modal.is_local() and not (GSULEE_WEBAPP / "pipeline.py").is_file():
     raise RuntimeError(f"G-SULEE pipeline.py를 찾을 수 없습니다: {GSULEE_WEBAPP}")
+if modal.is_local() and not BGM_ASSETS.is_dir():
+    raise RuntimeError(f"BGM 자산 폴더를 찾을 수 없습니다: {BGM_ASSETS}")
 
 api_image = (
     modal.Image.debian_slim(python_version="3.11")
@@ -34,8 +37,10 @@ render_image = (
     .apt_install("ffmpeg", "git", "libsndfile1")
     .pip_install("openai", "soundfile", "numpy")
     .pip_install("torch", index_url="https://download.pytorch.org/whl/cpu")
+    .env({"BGM_DIR": "/root/bgm"})
+    .add_local_dir(str(BGM_ASSETS), "/root/bgm")
     .add_local_dir(str(GSULEE_WEBAPP), "/root/gsulee")
-    .add_local_dir(str(THIS_DIR), "/root/modal_backend")
+    .add_local_dir(str(THIS_DIR), "/root/modal_backend", ignore=["bgm/**"])
 )
 
 app = modal.App("my-tiny-cute-video")

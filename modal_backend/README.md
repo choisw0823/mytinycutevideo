@@ -38,6 +38,18 @@ modal deploy modal_backend/modal_app.py
 
 렌더 함수는 최대 컨테이너 1개, CPU 4코어, 메모리 8GB, 제한시간 1시간으로 설정되어 있습니다. 작업 파일은 다음 작업 생성 시 24시간이 지난 항목부터 정리됩니다.
 
+## BGM
+
+G-SULEE가 영상 분석 결과에 따라 아홉 가지 무드 중 하나를 자동 선택합니다. Modal render image에는 `bgm/`의 FreePD CC0 음원 아홉 곡이 `/root/bgm`으로 포함되고, `BGM_DIR=/root/bgm`이 설정됩니다. 실행 중에는 외부에서 음원을 내려받지 않습니다.
+
+음원을 다시 받을 때만 저장소 루트에서 다음 명령을 실행합니다.
+
+```bash
+bash modal_backend/scripts/fetch_demo_bgm.sh modal_backend/bgm
+```
+
+선정 곡과 라이선스 출처는 [bgm/README.md](bgm/README.md)에 기록되어 있습니다.
+
 ## 발표 종료
 
 공개 URL의 비용과 오용을 막으려면 발표가 끝난 즉시 앱을 중지합니다.

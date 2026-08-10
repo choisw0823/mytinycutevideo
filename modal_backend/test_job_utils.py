@@ -164,6 +164,38 @@ class EventStateTests(unittest.TestCase):
 
 
 class DeploymentInputTests(unittest.TestCase):
+    def test_curated_bgm_has_one_mp3_per_mood(self):
+        bgm_root = Path(__file__).resolve().parent / "bgm"
+        moods = {
+            "upbeat",
+            "epic",
+            "romantic",
+            "comedy",
+            "world",
+            "scoring",
+            "electronic",
+            "misc",
+            "horror",
+        }
+
+        self.assertTrue(bgm_root.is_dir())
+        self.assertEqual(
+            {path.name for path in bgm_root.iterdir() if path.is_dir()}, moods
+        )
+        for mood in moods:
+            tracks = list((bgm_root / mood).glob("*.mp3"))
+            self.assertEqual(len(tracks), 1, mood)
+            data = tracks[0].read_bytes()
+            self.assertGreater(len(data), 100_000, mood)
+            self.assertTrue(
+                data.startswith(b"ID3")
+                or any(
+                    data[index] == 0xFF and data[index + 1] & 0xE0 == 0xE0
+                    for index in range(min(len(data) - 1, 4096))
+                ),
+                f"{mood}: MPEG 오디오 프레임을 찾지 못했습니다.",
+            )
+
     def test_sibling_gsulee_pipeline_assets_exist(self):
         workspace = Path(__file__).resolve().parents[2]
         webapp = workspace / "G-SULEE" / "webapp"

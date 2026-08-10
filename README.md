@@ -14,7 +14,7 @@ Modal FastAPI
   ├─ 업로드 및 ZIP 검증
   ├─ Modal Dict 진행 상태
   ├─ Modal Volume 작업 파일
-  └─ G-SULEE + FFmpeg + OpenAI 렌더링
+  └─ G-SULEE + FFmpeg + OpenAI + CC0 BGM 렌더링
 ```
 
 Supabase, 로그인, 회원가입, 별도 데이터베이스는 사용하지 않습니다. 영상 처리는 사용자 브라우저가 아니라 Modal CPU 컨테이너에서 실행됩니다.
@@ -72,6 +72,8 @@ VITE_MODAL_API_URL=https://<workspace>--my-tiny-cute-video-web-api.modal.run
 
 일반 노트북에서도 업로드와 화면 표시는 문제없습니다. 실제 분석·렌더링은 Modal에서 실행되므로 노트북 GPU는 필요하지 않습니다.
 
+최종 영상의 BGM은 G-SULEE가 분석한 분위기에 따라 자동 선택됩니다. 발표 중 외부 음원 서버에 의존하지 않도록 무드별 FreePD CC0 음원 한 곡씩을 Modal 이미지에 포함합니다.
+
 ## 검증
 
 ```bash
@@ -104,4 +106,5 @@ E2E 테스트는 Modal API를 가로채므로 OpenAI 비용이나 실제 영상 
 - 업로드가 150초를 넘음: 파일 크기를 줄이거나 더 빠른 네트워크에서 다시 시도합니다.
 - `G-SULEE pipeline.py를 찾을 수 없습니다`: 위의 형제 디렉터리 구조를 확인합니다.
 - 작업이 오래 대기함: 렌더 컨테이너를 1개로 제한했기 때문에 이전 작업이 끝날 때까지 기다립니다.
-- 결과 영상이 아직 없음: 상태가 `completed`가 될 때까지 `/jobs/{job_id}` 폴링 결과를 확인합니다.
+- 결과 영상이 아직 없음: 백엔드는 결과 파일을 Volume에 반영한 뒤에만 `completed`를 공개합니다. 완료 화면은 일시적인 404가 발생해도 같은 페이지에서 자동 재시도하며, 모두 실패하면 `영상 다시 불러오기`를 누를 수 있습니다.
+- BGM이 들리지 않음: 새 작업의 진행 이벤트에 `BGM:` 메시지가 있는지 확인하고 Modal render image에서 `BGM_DIR=/root/bgm`과 무드별 MP3를 확인합니다.
