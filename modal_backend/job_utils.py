@@ -40,6 +40,14 @@ def resolve_source_paths(module_file: Path, is_local: bool) -> tuple[Path, Path]
     return backend_dir, workspace_dir / "G-SULEE" / "webapp"
 
 
+def reload_volume_file(volume: Any, path: Path) -> Path:
+    """Reload a reused Volume mount and require a committed file to be visible."""
+    volume.reload()
+    if not path.is_file():
+        raise FileNotFoundError(f"Volume reload 후에도 파일을 찾을 수 없습니다: {path}")
+    return path
+
+
 def validate_uploads(paths: Sequence[Path]) -> str:
     """Validate uploaded paths and return either ``zip`` or ``videos``."""
     if not paths:

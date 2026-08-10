@@ -156,6 +156,21 @@ class DeploymentInputTests(unittest.TestCase):
         self.assertEqual(gsulee, Path("/root/gsulee"))
 
 
+class VolumeSyncTests(unittest.TestCase):
+    def test_reload_makes_a_newly_committed_input_visible_to_a_reused_worker(self):
+        with tempfile.TemporaryDirectory() as directory:
+            input_zip = Path(directory) / "input.zip"
+
+            class StaleVolumeMount:
+                def reload(self):
+                    input_zip.write_bytes(b"committed zip")
+
+            visible_input = job_utils.reload_volume_file(StaleVolumeMount(), input_zip)
+
+            self.assertTrue(visible_input.is_file())
+            self.assertEqual(visible_input.read_bytes(), b"committed zip")
+
+
 class CorsOriginTests(unittest.TestCase):
     def test_only_the_published_lovable_project_is_allowed_by_default(self):
         build_origins = getattr(job_utils, "build_allowed_origins", lambda _: [])

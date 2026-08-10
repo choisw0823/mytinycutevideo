@@ -102,7 +102,7 @@ def render_job(job_id: str, zip_relative_path: str, prompt: str) -> None:
     """Run the existing G-SULEE renderer and persist its progress events."""
     sys.path.insert(0, "/root/gsulee")
     sys.path.insert(0, "/root")
-    from modal_backend.job_utils import append_event
+    from modal_backend.job_utils import append_event, reload_volume_file
     import pipeline
 
     job_dir = _resolved_job_path(job_id)
@@ -124,6 +124,7 @@ def render_job(job_id: str, zip_relative_path: str, prompt: str) -> None:
                 last_thumbnail_commit[0] = now
 
     try:
+        reload_volume_file(jobs_volume, zip_path)
         pipeline.run_pipeline(str(job_dir), str(zip_path), prompt, emit)
     except Exception as error:
         traceback.print_exc()
