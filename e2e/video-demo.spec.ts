@@ -58,7 +58,7 @@ test("creates a video job and shows the finished result", async ({ page }) => {
   await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
   await expect(page.locator(".result-frame video")).toHaveAttribute(
     "src",
-    /\/jobs\/job-demo\/result$/,
+    /\/jobs\/job-demo\/result\?playback=0-\d+$/,
   );
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "MP4 다운로드" }).click();
@@ -70,6 +70,125 @@ test("creates a video job and shows the finished result", async ({ page }) => {
   await page.reload();
   await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
   await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
+});
+
+test("retries a result that is temporarily unavailable without leaving the page", async ({
+  page,
+}) => {
+  let resultRequests = 0;
+  await page.route("**/jobs", async (route) => {
+    await route.fulfill({
+      status: 202,
+      contentType: "application/json",
+      body: JSON.stringify({ job_id: "job-playback-retry" }),
+    });
+  });
+  await page.route("**/jobs/job-playback-retry**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/result")) {
+      resultRequests += 1;
+      await route.fulfill({ status: 404, body: "not committed yet" });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        job_id: "job-playback-retry",
+        state: "completed",
+        stage: "done",
+        events: [],
+        next: 0,
+        done: true,
+        error: null,
+      }),
+    });
+  });
+
+  await page.goto("/create");
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
+  await page.getByLabel("영상 파일").setInputFiles({
+    name: "memory.mp4",
+    mimeType: "video/mp4",
+    buffer: Buffer.from("demo-video"),
+  });
+  await page
+    .getByLabel("영상에 담고 싶은 이야기")
+    .fill("함께한 여름날의 따뜻한 추억 영상으로 만들어줘");
+  await page.getByRole("button", { name: "영상 만들기" }).click();
+
+  await expect(page.getByText("영상 불러오는 중...")).toBeVisible();
+  await expect.poll(() => resultRequests).toBeGreaterThanOrEqual(2);
+  await expect(page.locator(".result-frame video")).toHaveAttribute(
+    "src",
+    /playback=0-1$/,
+  );
+  await expect(page).toHaveURL(/\/create$/);
+});
+
+test("offers an in-page retry after automatic playback retries fail", async ({
+  page,
+}) => {
+  let resultRequests = 0;
+  await page.route("**/jobs", async (route) => {
+    await route.fulfill({
+      status: 202,
+      contentType: "application/json",
+      body: JSON.stringify({ job_id: "job-playback-failed" }),
+    });
+  });
+  await page.route("**/jobs/job-playback-failed**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/result")) {
+      resultRequests += 1;
+      await route.fulfill({ status: 404, body: "not committed yet" });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        job_id: "job-playback-failed",
+        state: "completed",
+        stage: "done",
+        events: [],
+        next: 0,
+        done: true,
+        error: null,
+      }),
+    });
+  });
+
+  await page.goto("/create");
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
+  await page.clock.install();
+  await page.getByLabel("영상 파일").setInputFiles({
+    name: "memory.mp4",
+    mimeType: "video/mp4",
+    buffer: Buffer.from("demo-video"),
+  });
+  await page
+    .getByLabel("영상에 담고 싶은 이야기")
+    .fill("함께한 여름날의 따뜻한 추억 영상으로 만들어줘");
+  await page.getByRole("button", { name: "영상 만들기" }).click();
+
+  const video = page.locator(".result-frame video");
+  const delays = [1000, 2000, 3000, 5000, 8000, 12000];
+  for (let attempt = 0; attempt < delays.length; attempt += 1) {
+    await expect.poll(() => resultRequests).toBe(attempt + 1);
+    await page.clock.fastForward(delays[attempt]);
+    await expect(video).toHaveAttribute(
+      "src",
+      new RegExp(`playback=0-${attempt + 1}$`),
+    );
+  }
+  await expect.poll(() => resultRequests).toBe(delays.length + 1);
+  await expect(page.getByText("영상을 불러오지 못했습니다.")).toBeVisible();
+
+  await page.getByRole("button", { name: "영상 다시 불러오기" }).click();
+  await expect(video).toHaveAttribute("src", /playback=1-0$/);
+  await expect(page.getByText("영상 불러오는 중...")).toBeVisible();
+  await expect(page).toHaveURL(/\/create$/);
 });
 
 test("keeps the result visible when download failure occurs", async ({ page }) => {

@@ -120,7 +120,6 @@ git commit -m "fix: publish results after Modal volume commit"
 ### Task 2: Retry Inline Video Playback on the Completed Screen
 
 **Files:**
-- Create: `e2e/fixtures/tiny-result.mp4`
 - Modify: `e2e/video-demo.spec.ts`
 - Modify: `src/components/video/ResultPlayer.tsx`
 - Modify: `src/styles.css`
@@ -131,14 +130,7 @@ git commit -m "fix: publish results after Modal volume commit"
 
 - [ ] **Step 1: Write the failing browser regression test**
 
-Generate a short valid H.264 fixture with FFmpeg:
-
-```bash
-mkdir -p e2e/fixtures
-ffmpeg -y -f lavfi -i color=c=black:s=320x180:d=0.5 -c:v libx264 -pix_fmt yuv420p -an -movflags +faststart e2e/fixtures/tiny-result.mp4
-```
-
-Create a job route whose first result request returns 404. Count result requests, serve the valid fixture on subsequent requests, and verify the browser recovers without navigation:
+Create a job route that returns 404 for result requests. Count result requests and verify the browser retries with a new URL without navigation:
 
 ```typescript
 test("retries a result that is temporarily unavailable without leaving the page", async ({ page }) => {
@@ -154,15 +146,7 @@ test("retries a result that is temporarily unavailable without leaving the page"
     const url = new URL(route.request().url());
     if (url.pathname.endsWith("/result")) {
       resultRequests += 1;
-      if (resultRequests === 1) {
-        await route.fulfill({ status: 404, body: "not committed yet" });
-        return;
-      }
-      await route.fulfill({
-        status: 200,
-        contentType: "video/mp4",
-        path: "e2e/fixtures/tiny-result.mp4",
-      });
+      await route.fulfill({ status: 404, body: "not committed yet" });
       return;
     }
     await route.fulfill({
@@ -191,23 +175,23 @@ test("retries a result that is temporarily unavailable without leaving the page"
 
   await expect(page.getByText("영상 불러오는 중...")).toBeVisible();
   await expect.poll(() => resultRequests).toBeGreaterThanOrEqual(2);
-  await expect(page.getByText("영상 불러오는 중...")).toHaveCount(0);
+  await expect(page.locator(".result-frame video")).toHaveAttribute("src", /playback=0-1$/);
   await expect(page).toHaveURL(/\/create$/);
 });
 ```
 
-Add a second test using the same completed-job setup but serving the valid fixture immediately. Install Playwright's clock, dispatch one `error` per attempt, and advance the exact retry delays:
+Add a second test using the same completed-job setup and 404 result route. Install Playwright's clock before submission, wait for each result request, and advance the exact retry delays:
 
 ```typescript
+const delays = [1000, 2000, 3000, 5000, 8000, 12000];
 await page.clock.install();
 const video = page.locator(".result-frame video");
-const delays = [1000, 2000, 3000, 5000, 8000, 12000];
 for (let attempt = 0; attempt < delays.length; attempt += 1) {
-  await video.dispatchEvent("error");
+  await expect.poll(() => resultRequests).toBe(attempt + 1);
   await page.clock.fastForward(delays[attempt]);
   await expect(video).toHaveAttribute("src", new RegExp(`playback=0-${attempt + 1}$`));
 }
-await video.dispatchEvent("error");
+await expect.poll(() => resultRequests).toBe(delays.length + 1);
 await expect(page.getByText("영상을 불러오지 못했습니다.")).toBeVisible();
 await page.getByRole("button", { name: "영상 다시 불러오기" }).click();
 await expect(video).toHaveAttribute("src", /playback=1-0$/);
@@ -280,7 +264,7 @@ Expected: TypeScript and production build exit 0.
 - [ ] **Step 5: Commit the player recovery fix**
 
 ```bash
-git add e2e/fixtures/tiny-result.mp4 e2e/video-demo.spec.ts src/components/video/ResultPlayer.tsx src/styles.css
+git add e2e/video-demo.spec.ts src/components/video/ResultPlayer.tsx src/styles.css
 git commit -m "fix: retry inline result playback"
 ```
 

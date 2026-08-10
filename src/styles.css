@@ -828,8 +828,40 @@
   .result-frame video {
     display: block;
     width: 100%;
+    min-height: clamp(12rem, 42vw, 27rem);
     max-height: 55vh;
     background: #201b18;
+    object-fit: contain;
+  }
+
+  .result-video-status {
+    position: absolute;
+    z-index: 1;
+    inset: 0.65rem;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    margin: 0 !important;
+    padding: 1.5rem;
+    background: rgb(32 27 24 / 0.9);
+    color: #fffaf4 !important;
+    font-size: 0.82rem !important;
+    text-align: center;
+  }
+
+  .result-video-status > p {
+    margin: 0;
+  }
+
+  .result-video-status > button {
+    border: 1px solid rgb(255 250 244 / 0.55);
+    border-radius: 999px;
+    padding: 0.58rem 0.9rem;
+    background: #fffaf4;
+    color: #4f3a30;
+    font: inherit;
+    cursor: pointer;
   }
 
   .result-meta {

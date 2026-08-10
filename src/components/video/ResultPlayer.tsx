@@ -1,7 +1,10 @@
 import { Download, RotateCcw, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { downloadJobResult, getJobResultUrl } from "@/lib/modal-api";
 import type { VideoJobEvent } from "@/types/video-job";
+
+const RETRY_DELAYS_MS = [1000, 2000, 3000, 5000, 8000, 12000];
+type PlaybackState = "loading" | "ready" | "failed";
 
 function formatDuration(seconds?: number) {
   if (!seconds) return null;
@@ -25,6 +28,51 @@ export function ResultPlayer({
   const duration = formatDuration(finalEvent?.duration);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [playbackState, setPlaybackState] = useState<PlaybackState>("loading");
+  const [playbackAttempt, setPlaybackAttempt] = useState(0);
+  const [playbackRevision, setPlaybackRevision] = useState(0);
+  const retryTimer = useRef<number | null>(null);
+  const resultUrl = `${getJobResultUrl(jobId)}?playback=${playbackRevision}-${playbackAttempt}`;
+
+  const clearRetryTimer = () => {
+    if (retryTimer.current !== null) {
+      window.clearTimeout(retryTimer.current);
+      retryTimer.current = null;
+    }
+  };
+
+  useEffect(() => {
+    setPlaybackState("loading");
+    setPlaybackAttempt(0);
+    setPlaybackRevision(0);
+    return clearRetryTimer;
+  }, [jobId]);
+
+  const handlePlaybackReady = () => {
+    clearRetryTimer();
+    setPlaybackState("ready");
+  };
+
+  const handlePlaybackError = () => {
+    if (retryTimer.current !== null || playbackState === "failed") return;
+    if (playbackAttempt >= RETRY_DELAYS_MS.length) {
+      setPlaybackState("failed");
+      return;
+    }
+
+    setPlaybackState("loading");
+    retryTimer.current = window.setTimeout(() => {
+      retryTimer.current = null;
+      setPlaybackAttempt((current) => current + 1);
+    }, RETRY_DELAYS_MS[playbackAttempt]);
+  };
+
+  const retryPlayback = () => {
+    clearRetryTimer();
+    setPlaybackState("loading");
+    setPlaybackAttempt(0);
+    setPlaybackRevision((current) => current + 1);
+  };
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -46,7 +94,28 @@ export function ResultPlayer({
       <p>흩어져 있던 순간들이 이제 한 편의 기억이 되었어요.</p>
 
       <div className="result-frame">
-        <video src={getJobResultUrl(jobId)} controls playsInline preload="metadata">
+        {playbackState === "loading" && (
+          <p className="result-video-status" role="status">
+            영상 불러오는 중...
+          </p>
+        )}
+        {playbackState === "failed" && (
+          <div className="result-video-status" role="alert">
+            <p>영상을 불러오지 못했습니다.</p>
+            <button type="button" onClick={retryPlayback}>
+              영상 다시 불러오기
+            </button>
+          </div>
+        )}
+        <video
+          key={resultUrl}
+          src={resultUrl}
+          controls
+          playsInline
+          preload="metadata"
+          onLoadedMetadata={handlePlaybackReady}
+          onError={handlePlaybackError}
+        >
           브라우저에서 영상을 재생할 수 없습니다.
         </video>
       </div>
