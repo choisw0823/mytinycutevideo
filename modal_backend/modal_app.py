@@ -1,6 +1,7 @@
 """Modal deployment for the My Tiny Cute Video asynchronous rendering API."""
 
 import os
+import json
 import re
 import shutil
 import sys
@@ -28,7 +29,7 @@ if modal.is_local() and not BGM_ASSETS.is_dir():
 
 api_image = (
     modal.Image.debian_slim(python_version="3.11")
-    .pip_install("fastapi[standard]")
+    .pip_install("fastapi[standard]", "openai")
     .add_local_dir(str(THIS_DIR), "/root/modal_backend")
 )
 
@@ -155,12 +156,19 @@ def web_api():
     from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse, JSONResponse
+    from openai import OpenAI
+    from starlette.concurrency import run_in_threadpool
     from modal_backend.job_utils import (
         MAX_FILES,
         MAX_TOTAL_BYTES,
         UploadValidationError,
         build_input_zip,
         validate_uploads,
+    )
+    from modal_backend.reflect_utils import (
+        build_llm_prompt,
+        generate_reflection,
+        validate_reflection_memories,
     )
 
     web = FastAPI(title="My Tiny Cute Video API", version="1.0.0")
@@ -176,6 +184,49 @@ def web_api():
     @web.get("/health")
     async def health():
         return {"ok": True, "service": "my-tiny-cute-video"}
+
+    def call_reflection_llm(analysis: dict[str, Any]) -> dict[str, Any]:
+        client_options: dict[str, Any] = {
+            "api_key": os.environ["OPENAI_API_KEY"],
+            "timeout": 30.0,
+            "max_retries": 1,
+        }
+        if base_url := os.getenv("OPENAI_BASE_URL"):
+            client_options["base_url"] = base_url
+        client = OpenAI(**client_options)
+        response = client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-5-mini"),
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "당신은 사용자의 기억 통계를 따뜻하지만 과장 없이 문장으로 정리합니다. "
+                        "제공되지 않은 사실을 만들거나 감정, 건강, 관계를 진단하지 않습니다."
+                    ),
+                },
+                {"role": "user", "content": build_llm_prompt(analysis)},
+            ],
+            response_format={"type": "json_object"},
+        )
+        content = response.choices[0].message.content
+        if not content:
+            raise ValueError("Reflect 모델이 빈 응답을 반환했습니다.")
+        payload = json.loads(content)
+        if not isinstance(payload, dict):
+            raise ValueError("Reflect 모델 응답이 JSON 객체가 아닙니다.")
+        return payload
+
+    @web.post("/reflect")
+    async def reflect(payload: dict[str, Any]):
+        try:
+            memories = validate_reflection_memories(payload.get("memories"))
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        return await run_in_threadpool(
+            generate_reflection,
+            memories,
+            call_reflection_llm,
+        )
 
     async def create_job(
         files=File(...),

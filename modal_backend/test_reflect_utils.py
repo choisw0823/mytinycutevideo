@@ -3,8 +3,11 @@ from datetime import datetime, timezone
 
 from modal_backend.reflect_utils import (
     analyze_memories,
+    build_llm_prompt,
     fallback_reflection,
+    generate_reflection,
     merge_llm_reflection,
+    validate_reflection_memories,
 )
 
 
@@ -132,6 +135,60 @@ class ReflectionAnalysisTests(unittest.TestCase):
         )
 
         self.assertEqual(merge_llm_reflection(analysis, {}), fallback_reflection(analysis))
+
+    def test_prompt_contains_aggregated_evidence_without_people_or_places(self):
+        memory = self.memory("private", "2026-08-12T12:00:00+00:00", ["daily"])
+        memory["people"] = ["홍길동"]
+        memory["places"] = ["비밀 장소"]
+        analysis = analyze_memories([memory], now=self.now)
+
+        prompt = build_llm_prompt(analysis)
+
+        self.assertIn('"recent_count": 1', prompt)
+        self.assertNotIn("홍길동", prompt)
+        self.assertNotIn("비밀 장소", prompt)
+
+    def test_model_exception_returns_fallback_instead_of_failing_request(self):
+        memories = [self.memory("daily", "2026-08-12T12:00:00+00:00", ["daily"])]
+
+        def unavailable(_analysis):
+            raise RuntimeError("model unavailable")
+
+        result = generate_reflection(memories, unavailable, now=self.now)
+
+        self.assertEqual(result["source"], "fallback")
+        self.assertIn("최근 2주", result["observation"])
+
+    def test_request_validation_rejects_more_than_sixty_memories(self):
+        memories = [
+            self.memory(f"memory-{index}", "2026-08-12T12:00:00+00:00", ["daily"])
+            for index in range(61)
+        ]
+
+        with self.assertRaisesRegex(ValueError, "60개"):
+            validate_reflection_memories(memories)
+
+    def test_request_validation_rejects_empty_input(self):
+        with self.assertRaisesRegex(ValueError, "하나"):
+            validate_reflection_memories([])
+
+    def test_request_validation_rejects_out_of_range_importance(self):
+        memory = self.memory("invalid", "2026-08-12T12:00:00+00:00", ["daily"])
+        memory["importance"] = 8
+
+        with self.assertRaisesRegex(ValueError, "중요도"):
+            validate_reflection_memories([memory])
+
+    def test_request_validation_trims_text_and_limits_private_arrays(self):
+        memory = self.memory(" valid ", "2026-08-12T12:00:00+00:00", ["daily"])
+        memory["title"] = "  작은 하루  "
+        memory["people"] = [f"person-{index}" for index in range(20)]
+
+        validated = validate_reflection_memories([memory])
+
+        self.assertEqual(validated[0]["id"], "valid")
+        self.assertEqual(validated[0]["title"], "작은 하루")
+        self.assertEqual(len(validated[0]["people"]), 10)
 
 
 if __name__ == "__main__":
