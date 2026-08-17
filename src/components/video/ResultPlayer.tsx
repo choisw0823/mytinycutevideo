@@ -2,6 +2,7 @@ import { Download, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { downloadJobResult, getJobResultUrl } from "@/lib/modal-api";
 import type { VideoJobEvent } from "@/types/video-job";
+import { ReflectExperience } from "@/components/video/ReflectExperience";
 
 const RETRY_DELAYS_MS = [1000, 2000, 3000, 5000, 8000, 12000];
 type PlaybackState = "loading" | "ready" | "failed";
@@ -17,10 +18,12 @@ export function ResultPlayer({
   jobId,
   events,
   onRestart,
+  prompt,
 }: {
   jobId: string;
   events: VideoJobEvent[];
   onRestart: () => void;
+  prompt?: string;
 }) {
   const finalEvent = [...events]
     .reverse()
@@ -145,6 +148,7 @@ export function ResultPlayer({
           {downloadError}
         </p>
       )}
+      <ReflectExperience jobId={jobId} prompt={prompt} />
     </section>
   );
 }

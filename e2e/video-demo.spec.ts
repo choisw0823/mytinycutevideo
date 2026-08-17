@@ -422,3 +422,82 @@ test("reflects on memories without changing the completed video pipeline", async
   await expect(page.locator(".result-frame video")).toBeAttached();
   await expect(page).toHaveURL(/\/create$/);
 });
+
+test("retries reflection failure while keeping the finished video visible", async ({
+  page,
+}) => {
+  let reflectAttempts = 0;
+  await page.route("**/jobs", async (route) => {
+    await route.fulfill({
+      status: 202,
+      contentType: "application/json",
+      body: JSON.stringify({ job_id: "job-reflect-retry" }),
+    });
+  });
+  await page.route("**/jobs/job-reflect-retry**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/result")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "video/mp4",
+        body: Buffer.from("finished-video"),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        job_id: "job-reflect-retry",
+        state: "completed",
+        stage: "done",
+        events: [],
+        next: 0,
+        done: true,
+        error: null,
+      }),
+    });
+  });
+  await page.route("**/reflect", async (route) => {
+    reflectAttempts += 1;
+    if (reflectAttempts === 1) {
+      await route.fulfill({ status: 503, body: "temporarily unavailable" });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        observation: "최근 일상의 작은 순간들이 차분히 쌓이고 있어요.",
+        evidence: ["최근 2주 3회"],
+        suggestion: "내일도 한 장면을 천천히 남겨볼까요?",
+        featuredMemoryId: "recent-window",
+        source: "fallback",
+      }),
+    });
+  });
+
+  await page.goto("/create");
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
+  await page.getByLabel("영상 파일").setInputFiles({
+    name: "daily.mp4",
+    mimeType: "video/mp4",
+    buffer: Buffer.from("demo-video"),
+  });
+  await page
+    .getByLabel("영상에 담고 싶은 이야기")
+    .fill("평범한 하루의 작은 순간을 기억해줘");
+  await page.getByRole("button", { name: "영상 만들기" }).click();
+  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
+
+  await page.getByRole("button", { name: "한 달의 기억 돌아보기" }).click();
+  await expect(page.getByText("기억을 돌아보지 못했습니다.")).toBeVisible();
+  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
+  await page.getByRole("button", { name: "다시 분석하기" }).click();
+
+  await expect(
+    page.getByText("최근 일상의 작은 순간들이 차분히 쌓이고 있어요."),
+  ).toBeVisible();
+  await expect(page.locator(".result-frame video")).toBeAttached();
+  await expect(page).toHaveURL(/\/create$/);
+});

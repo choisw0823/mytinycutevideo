@@ -188,7 +188,7 @@ function CreatePage() {
       )}
 
       {screen === "completed" && jobId && (
-        <ResultPlayer jobId={jobId} events={events} onRestart={restart} />
+        <ResultPlayer jobId={jobId} events={events} onRestart={restart} prompt={prompt} />
       )}
 
       {screen === "failed" && (
