@@ -1,22 +1,10 @@
-import { CalendarHeart, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
-import { generateReflection } from "@/lib/modal-api";
-import {
-  findMemory,
-  rememberCompletedJob,
-} from "@/lib/memory-store";
-import type { MemoryRecord, ReflectionResult } from "@/types/reflection";
+import { CalendarHeart, LoaderCircle, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { rememberCompletedJob } from "@/lib/memory-store";
 
-type ReflectState = "idle" | "loading" | "success" | "error";
+type ReflectState = "idle" | "loading" | "success";
 
-const formatMemoryDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "기억 속 어느 날";
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "long",
-    day: "numeric",
-  }).format(date);
-};
+const REFLECT_DELAY_MS = 800;
 
 export function ReflectExperience({
   jobId,
@@ -26,26 +14,23 @@ export function ReflectExperience({
   prompt?: string;
 }) {
   const [state, setState] = useState<ReflectState>("idle");
-  const [result, setResult] = useState<ReflectionResult | null>(null);
-  const [featuredMemory, setFeaturedMemory] = useState<MemoryRecord | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     rememberCompletedJob(jobId, prompt);
+    return () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+    };
   }, [jobId, prompt]);
 
-  const reflect = async () => {
+  const reflect = () => {
     setState("loading");
-    const memories = rememberCompletedJob(jobId, prompt);
-    try {
-      const reflection = await generateReflection(memories);
-      setResult(reflection);
-      setFeaturedMemory(findMemory(memories, reflection.featuredMemoryId) || null);
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
       setState("success");
-    } catch {
-      setResult(null);
-      setFeaturedMemory(null);
-      setState("error");
-    }
+    }, REFLECT_DELAY_MS);
   };
 
   return (
@@ -59,7 +44,7 @@ export function ReflectExperience({
             <strong>영상 너머의 기억도 돌아보세요</strong>
             <p>최근 한 달의 순간들이 어떤 흐름을 만들었는지 살펴볼게요.</p>
           </div>
-          <button type="button" className="reflect-action" onClick={() => void reflect()}>
+          <button type="button" className="reflect-action" onClick={reflect}>
             <Sparkles size={17} /> 한 달의 기억 돌아보기
           </button>
         </div>
@@ -75,68 +60,35 @@ export function ReflectExperience({
         </div>
       )}
 
-      {state === "error" && (
-        <div className="reflect-error" role="alert">
-          <div>
-            <strong>기억을 돌아보지 못했습니다.</strong>
-            <p>완성된 영상은 그대로예요. 잠시 후 분석만 다시 시도해 주세요.</p>
-          </div>
-          <button type="button" className="secondary-action" onClick={() => void reflect()}>
-            <RefreshCw size={16} /> 다시 분석하기
-          </button>
-        </div>
-      )}
-
-      {state === "success" && result && (
-        <section className="reflect-panel" aria-labelledby="reflect-title">
-          <div className="reflect-panel-heading">
-            <span aria-hidden="true">✦</span>
-            <div>
-              <p className="eyebrow">REFLECT · YOUR RECENT MEMORY</p>
-              <h2 id="reflect-title">Life Insight</h2>
-            </div>
+      {state === "success" && (
+        <section
+          className="reflect-panel reflect-panel--happy"
+          aria-labelledby="reflect-title"
+        >
+          <div className="reflect-happy-copy">
+            <p className="eyebrow">LIFE INSIGHT</p>
+            <h2 id="reflect-title">
+              최근 반려견 해피와 함께 하는 시간이 줄었네요
+            </h2>
+            <p className="reflect-happy-suggestion">
+              “해피와 함께 나들이 하는 시간을 가져보면 어떨까요?”
+            </p>
           </div>
 
-          <div className="reflect-layout">
-            <div className="reflect-copy">
-              <blockquote>{result.observation}</blockquote>
-
-              <div className="reflect-evidence">
-                <span>Evidence</span>
-                <ul>
-                  {result.evidence.map((evidence) => (
-                    <li key={evidence}>{evidence}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="reflect-tomorrow">
-                <span>Tomorrow</span>
-                <p>{result.suggestion}</p>
-              </div>
-            </div>
-
-            <div className="reflect-favorite">
-              <span>Favorite Memory</span>
-              <figure>
-                {featuredMemory?.thumbnail ? (
-                  <img src={featuredMemory.thumbnail} alt="" />
-                ) : (
-                  <div className="reflect-photo-placeholder" aria-hidden="true">✦</div>
-                )}
-                <figcaption>
-                  <strong>{featuredMemory?.title || "마음에 남은 작은 기억"}</strong>
-                  <small>
-                    {featuredMemory
-                      ? formatMemoryDate(featuredMemory.occurredAt)
-                      : "최근의 기억"}
-                  </small>
-                  <p>{featuredMemory?.summary || "다시 꺼내 보고 싶은 순간이에요."}</p>
-                </figcaption>
-              </figure>
-            </div>
-          </div>
-
+          <ol className="reflect-journey" aria-label="기억에서 내일로 이어지는 흐름">
+            <li>
+              <strong>Remember</strong>
+              <span>과거를 기억한다</span>
+            </li>
+            <li>
+              <strong>Reflect</strong>
+              <span>지금의 삶을 돌아본다</span>
+            </li>
+            <li>
+              <strong>Tomorrow</strong>
+              <span>더 나은 선택을 제안한다</span>
+            </li>
+          </ol>
         </section>
       )}
     </div>

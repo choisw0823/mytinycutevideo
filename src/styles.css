@@ -895,8 +895,7 @@
   }
 
   .reflect-invitation,
-  .reflect-loading,
-  .reflect-error {
+  .reflect-loading {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
@@ -918,16 +917,14 @@
   }
 
   .reflect-invitation strong,
-  .reflect-loading strong,
-  .reflect-error strong {
+  .reflect-loading strong {
     color: #4c3a31;
     font-family: var(--font-memory);
     font-size: 0.9rem;
   }
 
   .reflect-invitation p,
-  .reflect-loading p,
-  .reflect-error p {
+  .reflect-loading p {
     margin: 0.25rem 0 0;
     color: #837166;
     font-size: 0.72rem;
@@ -962,17 +959,6 @@
     animation: film-spin 1.2s linear infinite;
   }
 
-  .reflect-error {
-    border-color: rgb(158 76 63 / 0.2);
-    background: #fff8f4;
-  }
-
-  .reflect-error .secondary-action {
-    min-height: 2.55rem;
-    padding: 0.6rem 0.9rem;
-    font-size: 0.74rem;
-  }
-
   .reflect-panel {
     position: relative;
     overflow: hidden;
@@ -996,149 +982,94 @@
     border-radius: 50%;
   }
 
-  .reflect-panel-heading {
+  .reflect-panel--happy {
+    padding: clamp(1.25rem, 4vw, 2.1rem);
+  }
+
+  .reflect-happy-copy {
     position: relative;
     z-index: 1;
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    min-height: 14.5rem;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(1.25rem, 4vw, 2.2rem);
+    border: 1px solid rgb(103 75 55 / 0.13);
+    background: rgb(255 253 248 / 0.88);
   }
 
-  .reflect-panel-heading > span {
-    display: grid;
-    width: 2.4rem;
-    height: 2.4rem;
-    place-items: center;
-    border-radius: 50%;
-    background: #e7d0bf;
-    color: #785242;
+  .reflect-happy-copy .eyebrow {
+    margin: 0 0 1.1rem;
+    color: #8d7d72;
+    font-size: 0.62rem;
   }
 
-  .reflect-panel-heading .eyebrow {
-    margin: 0 0 0.2rem;
-    font-size: 0.58rem;
-  }
-
-  .reflect-panel h2 {
+  .reflect-happy-copy h2 {
+    max-width: 38rem;
     margin: 0;
-    color: #3f3029;
+    color: #493a32;
     font-family: var(--font-memory);
-    font-size: clamp(1.4rem, 3vw, 1.85rem);
+    font-size: clamp(1.3rem, 3.2vw, 1.85rem);
+    font-weight: 600;
+    line-height: 1.55;
+    letter-spacing: -0.025em;
+    word-break: keep-all;
   }
 
-  .reflect-layout {
+  .reflect-happy-suggestion {
+    margin: 1.7rem 0 0;
+    padding-top: 1.35rem;
+    border-top: 1px solid #dccdbf;
+    color: #8b5e49;
+    font-family: var(--font-memory);
+    font-size: clamp(0.98rem, 2.4vw, 1.22rem);
+    font-weight: 700;
+    line-height: 1.6;
+    word-break: keep-all;
+  }
+
+  .reflect-journey {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: minmax(0, 1.45fr) minmax(12rem, 0.75fr);
-    align-items: start;
-    gap: 1.5rem;
-    margin-top: 1.4rem;
-  }
-
-  .reflect-copy blockquote {
-    margin: 0;
-    color: #4d3b32;
-    font-family: var(--font-memory);
-    font-size: clamp(1.1rem, 2.6vw, 1.42rem);
-    font-weight: 700;
-    line-height: 1.55;
-  }
-
-  .reflect-evidence,
-  .reflect-tomorrow {
-    margin-top: 1.15rem;
-    padding-top: 0.9rem;
-    border-top: 1px solid rgb(115 82 62 / 0.13);
-  }
-
-  .reflect-evidence > span,
-  .reflect-tomorrow > span,
-  .reflect-favorite > span {
-    color: #96705c;
-    font-size: 0.57rem;
-    font-weight: 800;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-  }
-
-  .reflect-evidence ul {
-    margin: 0.5rem 0 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+    margin: 1.6rem 0 0;
     padding: 0;
     list-style: none;
   }
 
-  .reflect-evidence li {
+  .reflect-journey li {
+    position: relative;
     display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    color: #756359;
-    font-size: 0.76rem;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.3rem;
   }
 
-  .reflect-evidence li::before {
-    width: 0.35rem;
-    height: 0.35rem;
-    flex: 0 0 auto;
-    content: "";
-    border-radius: 50%;
-    background: #a8755f;
+  .reflect-journey li:not(:last-child)::after {
+    position: absolute;
+    top: 0.08rem;
+    right: -1.35rem;
+    content: "→";
+    color: #bd8670;
+    font-size: 1.2rem;
+    font-weight: 800;
   }
 
-  .reflect-tomorrow p {
-    margin: 0.45rem 0 0;
-    color: #6a4b3e;
-    font-family: var(--font-memory);
-    font-size: 0.9rem;
-    font-weight: 700;
-    line-height: 1.55;
+  .reflect-journey strong {
+    color: #49362d;
+    font-family: var(--font-serif);
+    font-size: clamp(0.92rem, 2.2vw, 1.16rem);
   }
 
-  .reflect-favorite figure {
-    margin: 0.5rem 0 0;
-    padding: 0.48rem 0.48rem 0.8rem;
-    transform: rotate(1.3deg);
-    border: 1px solid rgb(93 67 52 / 0.08);
-    background: #fffefa;
-    box-shadow: 0 10px 24px rgb(72 45 30 / 0.16);
+  .reflect-journey li:last-child strong {
+    color: #99634c;
   }
 
-  .reflect-favorite img,
-  .reflect-photo-placeholder {
-    display: grid;
-    width: 100%;
-    height: 8.5rem;
-    place-items: center;
-    background: linear-gradient(135deg, #dac5b6, #f0e5da);
-    color: #8b6351;
-    object-fit: cover;
-  }
-
-  .reflect-favorite figcaption {
-    padding: 0.65rem 0.25rem 0;
-  }
-
-  .reflect-favorite figcaption strong,
-  .reflect-favorite figcaption small {
-    display: block;
-  }
-
-  .reflect-favorite figcaption strong {
-    color: #4f3d34;
-    font-family: var(--font-memory);
-    font-size: 0.85rem;
-  }
-
-  .reflect-favorite figcaption small {
-    margin-top: 0.15rem;
-    color: #9a8375;
-    font-size: 0.61rem;
-  }
-
-  .reflect-favorite figcaption p {
-    margin: 0.45rem 0 0;
-    color: #77675e;
-    font-size: 0.67rem;
+  .reflect-journey span {
+    color: #76665d;
+    font-size: 0.7rem;
     line-height: 1.45;
   }
 
@@ -1214,23 +1145,42 @@
     flex-direction: column;
   }
 
-  .reflect-invitation,
-  .reflect-error {
+  .reflect-invitation {
     grid-template-columns: auto 1fr;
   }
 
-  .reflect-invitation .reflect-action,
-  .reflect-error .secondary-action {
+  .reflect-invitation .reflect-action {
     grid-column: 1 / -1;
     width: 100%;
   }
 
-  .reflect-layout {
-    grid-template-columns: 1fr;
+  .reflect-happy-copy {
+    min-height: 12rem;
+    padding: 1.2rem;
   }
 
-  .reflect-favorite {
-    max-width: 16rem;
+  .reflect-journey {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .reflect-journey li {
+    padding-left: 1.2rem;
+  }
+
+  .reflect-journey li::before {
+    position: absolute;
+    top: 0.42rem;
+    left: 0;
+    width: 0.45rem;
+    height: 0.45rem;
+    content: "";
+    border-radius: 50%;
+    background: #b77f68;
+  }
+
+  .reflect-journey li:not(:last-child)::after {
+    display: none;
   }
 }
 

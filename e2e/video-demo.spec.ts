@@ -348,9 +348,15 @@ test("shows a restart action when video generation fails", async ({ page }) => {
   await expect(page.getByRole("button", { name: "다시 시작" })).toBeVisible();
 });
 
-test("reflects on memories without changing the completed video pipeline", async ({
+test("shows the fixed Happy reflection without calling the reflection api", async ({
   page,
 }) => {
+  let reflectRequests = 0;
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.endsWith("/reflect")) {
+      reflectRequests += 1;
+    }
+  });
   await page.route("**/jobs", async (route) => {
     await route.fulfill({
       status: 202,
@@ -382,19 +388,6 @@ test("reflects on memories without changing the completed video pipeline", async
       }),
     });
   });
-  await page.route("**/reflect", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        observation: "최근에는 친구들과 야외에서 보낸 시간이 조금 줄었어요.",
-        evidence: ["이전 2주 3회 · 최근 2주 0회"],
-        suggestion: "이번 주에는 다시 함께 걸어볼까요?",
-        featuredMemoryId: "friends-river",
-        source: "llm",
-      }),
-    });
-  });
 
   await page.goto("/create");
   await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
@@ -411,93 +404,19 @@ test("reflects on memories without changing the completed video pipeline", async
   await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
   await page.getByRole("button", { name: "한 달의 기억 돌아보기" }).click();
 
-  await expect(page.getByText("Life Insight")).toBeVisible();
+  await expect(page.getByText("기억의 흐름을 살펴보고 있어요...")).toBeVisible();
   await expect(
-    page.getByText("최근에는 친구들과 야외에서 보낸 시간이 조금 줄었어요."),
+    page.getByText("최근 반려견 해피와 함께 하는 시간이 줄었네요"),
   ).toBeVisible();
-  await expect(page.getByText("이전 2주 3회 · 최근 2주 0회")).toBeVisible();
-  await expect(page.getByText("이번 주에는 다시 함께 걸어볼까요?")).toBeVisible();
-  await expect(page.getByText("강가에서 웃던 오후")).toBeVisible();
-  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
-  await expect(page.locator(".result-frame video")).toBeAttached();
-  await expect(page).toHaveURL(/\/create$/);
-});
-
-test("retries reflection failure while keeping the finished video visible", async ({
-  page,
-}) => {
-  let reflectAttempts = 0;
-  await page.route("**/jobs", async (route) => {
-    await route.fulfill({
-      status: 202,
-      contentType: "application/json",
-      body: JSON.stringify({ job_id: "job-reflect-retry" }),
-    });
-  });
-  await page.route("**/jobs/job-reflect-retry**", async (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname.endsWith("/result")) {
-      await route.fulfill({
-        status: 200,
-        contentType: "video/mp4",
-        body: Buffer.from("finished-video"),
-      });
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        job_id: "job-reflect-retry",
-        state: "completed",
-        stage: "done",
-        events: [],
-        next: 0,
-        done: true,
-        error: null,
-      }),
-    });
-  });
-  await page.route("**/reflect", async (route) => {
-    reflectAttempts += 1;
-    if (reflectAttempts === 1) {
-      await route.fulfill({ status: 503, body: "temporarily unavailable" });
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        observation: "최근 일상의 작은 순간들이 차분히 쌓이고 있어요.",
-        evidence: ["최근 2주 3회"],
-        suggestion: "내일도 한 장면을 천천히 남겨볼까요?",
-        featuredMemoryId: "recent-window",
-        source: "fallback",
-      }),
-    });
-  });
-
-  await page.goto("/create");
-  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
-  await page.getByLabel("영상 파일").setInputFiles({
-    name: "daily.mp4",
-    mimeType: "video/mp4",
-    buffer: Buffer.from("demo-video"),
-  });
-  await page
-    .getByLabel("영상에 담고 싶은 이야기")
-    .fill("평범한 하루의 작은 순간을 기억해줘");
-  await page.getByRole("button", { name: "영상 만들기" }).click();
-  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
-
-  await page.getByRole("button", { name: "한 달의 기억 돌아보기" }).click();
-  await expect(page.getByText("기억을 돌아보지 못했습니다.")).toBeVisible();
-  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
-  await page.getByRole("button", { name: "다시 분석하기" }).click();
-
   await expect(
-    page.getByText("최근 일상의 작은 순간들이 차분히 쌓이고 있어요."),
+    page.getByText("“해피와 함께 나들이 하는 시간을 가져보면 어떨까요?”"),
   ).toBeVisible();
+  await expect(page.getByText("Evidence", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("과거를 기억한다")).toBeVisible();
+  await expect(page.getByText("지금의 삶을 돌아본다")).toBeVisible();
+  await expect(page.getByText("더 나은 선택을 제안한다")).toBeVisible();
+  expect(reflectRequests).toBe(0);
+  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
   await expect(page.locator(".result-frame video")).toBeAttached();
   await expect(page).toHaveURL(/\/create$/);
 });
