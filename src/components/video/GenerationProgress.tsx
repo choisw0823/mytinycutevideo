@@ -12,6 +12,9 @@ const STAGES = [
   ["render", "마지막 필름을 현상하고 있어요"],
 ] as const;
 
+
+
+
 const STAGE_ALIASES: Record<string, string> = {
   unzip: "extract",
   prepare: "normalize",
