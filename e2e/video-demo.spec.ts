@@ -347,3 +347,78 @@ test("shows a restart action when video generation fails", async ({ page }) => {
   await expect(page.getByText("영상 생성에 실패했습니다")).toBeVisible();
   await expect(page.getByRole("button", { name: "다시 시작" })).toBeVisible();
 });
+
+test("reflects on memories without changing the completed video pipeline", async ({
+  page,
+}) => {
+  await page.route("**/jobs", async (route) => {
+    await route.fulfill({
+      status: 202,
+      contentType: "application/json",
+      body: JSON.stringify({ job_id: "job-reflect" }),
+    });
+  });
+  await page.route("**/jobs/job-reflect**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/result")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "video/mp4",
+        body: Buffer.from("finished-video"),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        job_id: "job-reflect",
+        state: "completed",
+        stage: "done",
+        events: [],
+        next: 0,
+        done: true,
+        error: null,
+      }),
+    });
+  });
+  await page.route("**/reflect", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        observation: "최근에는 친구들과 야외에서 보낸 시간이 조금 줄었어요.",
+        evidence: ["이전 2주 3회 · 최근 2주 0회"],
+        suggestion: "이번 주에는 다시 함께 걸어볼까요?",
+        featuredMemoryId: "friends-river",
+        source: "llm",
+      }),
+    });
+  });
+
+  await page.goto("/create");
+  await expect(page.locator("main[data-hydrated='true']")).toBeVisible();
+  await page.getByLabel("영상 파일").setInputFiles({
+    name: "friends.mp4",
+    mimeType: "video/mp4",
+    buffer: Buffer.from("demo-video"),
+  });
+  await page
+    .getByLabel("영상에 담고 싶은 이야기")
+    .fill("친구들과 보낸 여름 오후를 따뜻하게 기억해줘");
+  await page.getByRole("button", { name: "영상 만들기" }).click();
+
+  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
+  await page.getByRole("button", { name: "한 달의 기억 돌아보기" }).click();
+
+  await expect(page.getByText("Life Insight")).toBeVisible();
+  await expect(
+    page.getByText("최근에는 친구들과 야외에서 보낸 시간이 조금 줄었어요."),
+  ).toBeVisible();
+  await expect(page.getByText("이전 2주 3회 · 최근 2주 0회")).toBeVisible();
+  await expect(page.getByText("이번 주에는 다시 함께 걸어볼까요?")).toBeVisible();
+  await expect(page.getByText("강가에서 웃던 오후")).toBeVisible();
+  await expect(page.getByText("영상이 완성됐어요")).toBeVisible();
+  await expect(page.locator(".result-frame video")).toBeAttached();
+  await expect(page).toHaveURL(/\/create$/);
+});

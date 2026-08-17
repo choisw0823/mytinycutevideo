@@ -1,4 +1,5 @@
 import type { VideoJobStatus } from "@/types/video-job";
+import type { MemoryRecord, ReflectionResult } from "@/types/reflection";
 
 const baseUrl = () =>
   (import.meta.env.VITE_MODAL_API_URL || "").replace(/\/$/, "");
@@ -96,4 +97,20 @@ export async function downloadJobResult(jobId: string): Promise<void> {
   anchor.click();
   anchor.remove();
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+}
+
+export async function generateReflection(
+  memories: MemoryRecord[],
+): Promise<ReflectionResult> {
+  const response = await fetch(`${baseUrl()}/reflect`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ memories }),
+  });
+  if (!response.ok) {
+    throw new Error(
+      await responseMessage(response, "기억을 돌아보지 못했습니다."),
+    );
+  }
+  return response.json() as Promise<ReflectionResult>;
 }
