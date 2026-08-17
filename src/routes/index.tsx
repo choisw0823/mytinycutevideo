@@ -27,7 +27,7 @@ function LandingPage() {
         <h1 id="landing-title">My Tiny Cute Video</h1>
         <p className="hero-copy">
           흩어진 순간을
-          <br />한 편의 기억으로
+          <br />한 편의 기억으로 만드는 중
         </p>
         <Link to="/create" className="primary-action">
           시작하기
